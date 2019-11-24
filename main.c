@@ -41,6 +41,7 @@ int validateList(){
 
         return 0;
     }
+    return 1;
 }
 
 void printMenu(){
