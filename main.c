@@ -30,9 +30,10 @@ void guardarContacto(tcontacto contacto); // Guarda un contacto
 void swap(elemento* node1, elemento* node2);
 void sort(elemento* start);
 void saveToFile();
+void syncWithFile();
 
 int validateList(){
-    if(inicioLista == NULL){
+    if(inicioLista == NULL || listSize==1){
         printf("Aún no hay contactos, ¿desea agregar uno ahora?");
         printf("\n1.- Si\n2.- No");
 
@@ -41,6 +42,7 @@ int validateList(){
 
         if(opt == 1){
             agregarContacto();
+            return 0;
         }
 
         return 0;
@@ -110,7 +112,7 @@ void guardarContacto(tcontacto contacto){
     listSize++;
 
     printf("¿Desea agregar otro contacto?\n");
-    printf("1.- Si\n2.- No");
+    printf("1.- Si\n2.- No\n");
 
     int opt;
     scanf("%i", &opt);
@@ -135,7 +137,7 @@ void agregarContacto(){
 }
 
 void mostrarTodo(){
-    validateList();
+    if(validateList() == 0) return;
 
     elemento* listaAux = inicioLista;
 
@@ -252,6 +254,7 @@ void saveToFile(){
 
     fclose(file);
     printf("Todos los cambios guardados");
+    syncWithFile();
 }
 
 void syncWithFile(){
@@ -292,6 +295,93 @@ void syncWithFile(){
     fclose(file);
 }
 
+int equalContacts(tcontacto contact1, tcontacto contact2){
+    if(strcmp(contact1.nombre, contact2.nombre) == 0
+        && strcmp(contact1.apellido, contact2.apellido) == 0
+        && strcmp(contact1.direccion, contact2.direccion) == 0
+        && strcmp(contact1.celular, contact2.celular) == 0
+        && strcmp(contact1.telefono, contact2.telefono) == 0
+        && strcmp(contact1.email, contact2.email) == 0) {
+        return 1;
+    }
+
+    return 0;
+}
+
+void deleteContact(){
+    printf("Buscar elemento para eliminar\n");
+    printf("Nombre:");
+    char query[STR_LEN];
+
+    scanf("%s", &query);
+
+    elemento* coincidencias = buscarContacto(query);
+    elemento* coincidenciasAux = coincidencias;
+
+    if(coincidencias->next == NULL){
+        printf("No se encontró nada, ¿Desea repetir la busqueda?\n");
+        printf("1.- Si\n2.- No\n");
+
+        int opt;
+        scanf("%i", &opt);
+
+        if(opt == 1) {
+            deleteContact();
+        }
+
+        return;
+    }
+
+    int i = 0;
+    while(coincidenciasAux->next != NULL){
+        printf("Contacto número %i\n", i+1);
+        mostrarDatos(coincidenciasAux->contacto);
+        coincidenciasAux = coincidenciasAux->next;
+        i++;
+    }
+
+    printf("Introduce el número del contacto que desee elminiar (introduce 0 para cancelar)\n");
+
+    int opt;
+    scanf("%i", &opt);
+
+    if(opt == 0) return;
+
+    coincidenciasAux = coincidencias;
+    i=0;
+    while(coincidenciasAux->next != NULL){
+        if(i == opt-1){
+            tcontacto coincidencia = coincidenciasAux->contacto;
+            elemento* temp = inicioLista, *prev;
+            int done = 0;
+            if (temp != NULL && equalContacts(temp->contacto, coincidencia) == 1)
+            {
+                inicioLista = temp->next;   // Changed head
+                free(temp);               // free old head
+                done = 1;
+            }
+            if(done == 0){
+                while (temp != NULL && equalContacts(temp->contacto, coincidencia) == 0)
+                {
+                    prev = temp;
+                    temp = temp->next;
+                }
+
+                prev->next = temp->next;
+
+                free(temp);
+            }
+
+            listSize--;
+            saveToFile();
+        }
+
+        coincidenciasAux = coincidenciasAux->next;
+        i++;
+    }
+
+}
+
 int main(){
     syncWithFile();
 
@@ -309,6 +399,10 @@ int main(){
 
             case 2:
                 buscar();
+                break;
+
+            case 3:
+                deleteContact();
                 break;
 
             case 5:
