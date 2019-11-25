@@ -5,6 +5,8 @@
 #define STR_LEN 256
 #define FILENAME "storage"
 
+int listSize = 1;
+
 typedef struct {
     char nombre[STR_LEN];
     char apellido[STR_LEN];
@@ -27,7 +29,7 @@ tcontacto crearContacto(); // Solicita datos de un contacto
 void guardarContacto(tcontacto contacto); // Guarda un contacto
 void swap(elemento* node1, elemento* node2);
 void sort(elemento* start);
-void saveToFile(elemento* start);
+void saveToFile();
 
 int validateList(){
     if(inicioLista == NULL){
@@ -49,6 +51,7 @@ int validateList(){
 void printMenu(){
     for(int i = 0; i < 30; i++)
         printf("\n");
+    printf("%i contactos guardados\n", listSize-1);
     printf("1.- Agregar contacto\n");
     printf("2.- Buscar contacto\n");
     printf("3.- Eliminar contacto\n");
@@ -104,6 +107,7 @@ void guardarContacto(tcontacto contacto){
     strcpy(listaAux->next->contacto.nombre, "zzzzzzzzzzz");
 
     mostrarDatos(listaAux->contacto);
+    listSize++;
 
     printf("¿Desea agregar otro contacto?\n");
     printf("1.- Si\n2.- No");
@@ -114,7 +118,7 @@ void guardarContacto(tcontacto contacto){
     if(opt == 1){
         agregarContacto();
     }else{
-        saveToFile(inicioLista);
+        saveToFile();
     }
 
 
@@ -144,7 +148,7 @@ void mostrarTodo(){
         i++;
     }
 
-    printf("\n\n1.- Mostrar contactos de nuevo\n2.- Volver al menu principal");
+    printf("\n\n1.- Mostrar contactos de nuevo\n2.- Volver al menu principal\n");
     int a;
     scanf("%i", &a);
     if(a == 1){
@@ -222,7 +226,7 @@ void buscar(){
     }
 
     printf("¿Deseas hacer otra busqueda?");
-    printf("\n1.-Si\n2.-No");
+    printf("\n1.-Si\n2.-No\n");
     int opt;
     scanf("%i", &opt);
     if(opt==1){
@@ -230,7 +234,7 @@ void buscar(){
     }
 }
 
-void saveToFile(elemento* start){
+void saveToFile(){
     FILE* file = fopen(FILENAME, "wb");
     if(file == NULL){
         printf("Error al guardar cambios en archivo");
@@ -238,13 +242,12 @@ void saveToFile(elemento* start){
     }
 
     elemento* listAux = inicioLista;
-
-    while(listAux->next != NULL){
+    int i = 0;
+    while(i < listSize && listAux->next != NULL){
         fwrite(&(listAux->contacto), sizeof(tcontacto), 1, file);
 
-        mostrarDatos(listAux->contacto);
-
         listAux = listAux->next;
+        i++;
     }
 
     fclose(file);
@@ -282,6 +285,7 @@ void syncWithFile(){
         listAux = listAux->next;
 
         i++;
+        listSize++;
         fseek(file, sizeof(tcontacto)*i, SEEK_SET);
     }
 
