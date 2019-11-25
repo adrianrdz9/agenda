@@ -3,6 +3,7 @@
 #include <string.h>
 
 #define STR_LEN 256
+#define FILENAME "storage"
 
 typedef struct {
     char nombre[STR_LEN];
@@ -25,7 +26,8 @@ void printMenu(); // Muestra las opciones del menu principal
 tcontacto crearContacto(); // Solicita datos de un contacto
 void guardarContacto(tcontacto contacto); // Guarda un contacto
 void swap(elemento* node1, elemento* node2);
-void sort(elemento* inicio);
+void sort(elemento* start);
+void saveToFile(elemento* start);
 
 int validateList(){
     if(inicioLista == NULL){
@@ -103,7 +105,6 @@ void guardarContacto(tcontacto contacto){
 
     mostrarDatos(listaAux->contacto);
 
-    printf("\nContacto guardado\n");
     printf("¿Desea agregar otro contacto?\n");
     printf("1.- Si\n2.- No");
 
@@ -112,7 +113,11 @@ void guardarContacto(tcontacto contacto){
 
     if(opt == 1){
         agregarContacto();
+    }else{
+        saveToFile(inicioLista);
     }
+
+
 }
 
 void agregarContacto(){
@@ -225,7 +230,67 @@ void buscar(){
     }
 }
 
+void saveToFile(elemento* start){
+    FILE* file = fopen(FILENAME, "wb");
+    if(file == NULL){
+        printf("Error al guardar cambios en archivo");
+        exit(1);
+    }
+
+    elemento* listAux = inicioLista;
+
+    while(listAux->next != NULL){
+        fwrite(&(listAux->contacto), sizeof(tcontacto), 1, file);
+
+        mostrarDatos(listAux->contacto);
+
+        listAux = listAux->next;
+    }
+
+    fclose(file);
+    printf("Todos los cambios guardados");
+}
+
+void syncWithFile(){
+    FILE* file = fopen(FILENAME, "rb");
+    if(file == NULL){
+        file = fopen(FILENAME, "wb");
+        if(file == NULL){
+            printf("No se puede crear el archivo");
+            exit(1);
+        }else{
+            return;
+        }
+    }
+
+    tcontacto auxNode;
+    elemento* listAux = inicioLista = (elemento*)malloc(sizeof(elemento));
+
+    fseek(file, 0L, SEEK_END);
+    int sz = ftell(file);
+
+    fseek(file, 0L, SEEK_SET);
+
+    int i = 0;
+
+    while(i < (sz/sizeof(tcontacto))){
+        fread(&auxNode, sizeof(tcontacto), 1, file);
+        mostrarDatos(auxNode);
+
+        listAux->contacto = auxNode;
+        listAux->next = (elemento*)malloc(sizeof(elemento));
+        listAux = listAux->next;
+
+        i++;
+        fseek(file, sizeof(tcontacto)*i, SEEK_SET);
+    }
+
+    fclose(file);
+}
+
 int main(){
+    syncWithFile();
+
     while(1){
 
         printMenu();
